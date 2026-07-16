@@ -35,4 +35,4 @@ A Python command-line application using SQLAlchemy 2.0 to manage users, products
 
 ##
 
-![screenshot of terminal](image.png)
+(![screenshot of terminal](image-1.png))

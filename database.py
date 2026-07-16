@@ -165,7 +165,7 @@ for row in results:
     print(f"User: {row.name} | Total Orders: {row.total_orders}")
 
 # Delete a user by ID
-target_user_id = 4
+target_user_id = 1
 query = select(User).where(User.id == target_user_id)
 user = session.execute(query).scalars().first()
 
