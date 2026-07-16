@@ -108,17 +108,21 @@ print(all_products)
 # Retrieve all orders, showing the user's name, product name, and quantity
 all_orders = session.execute(select(Order)).scalars().all()
 for order in all_orders:
-    print(f"User: {order.user.name} | Product: {order.product.name} | Qty: {order.quantity}")
+    order_user = order.user.name if order.user else "Unknown User"
+    order_product = order.product.name if order.product else "Unknown Product"
+    print(f"User: {order_user} | Product: {order_product} | Qty: {order.quantity}")
 
 # Update a product's price
-query = select(Product).where(Product.id == 1)
+target_product_id = 1
+query = select(Product).where(Product.id == target_product_id)
 product = session.execute(query).scalars().first()
 if product:
     product.price = 25
     session.commit()
-    print(f"\nProduct: {product.id} | Name: {product.name}'s price has successfully been changed.")
+    print(f"\nProduct ID: {product.id} | Product Name: {product.name}. The price for {product.name} has successfully been updated.")
 else:
-    print("Product ID 1 not found for update.")
+    # print("Product ID 1 not found for update.")
+    print(f"Product ID {target_product_id} not found for update.")
     
 
 # =================
@@ -129,18 +133,23 @@ else:
 # ADDED IN ORDER TABLE CLASS #
 
 # Update shipping status for an order
-query = select(Order).where(Order.id == 3)
+target_order_id = 3
+query = select(Order).where(Order.id == target_order_id)
 order = session.execute(query).scalars().first()
 if order:
     order.status = True
     session.commit()
+    # Check if the user relationship is available, otherwise fall back to a safe message
+    user_name = order.user.name if order.user else "Unknown User"
+    print(f"Order {target_order_id} for {user_name} has shipped!")
 else:
-    print(f"\nOrder ID 3 not found for update.")
+    print(f"\nOrder ID {target_order_id} not found for update.")
 
 # Query all orders that are not shipped
 orders_not_shipped = session.execute(select(Order).where(Order.status == False)).scalars().all()
 for order in orders_not_shipped:
-    print(f"Order: {order.id} for {order.user.name} has not shipped yet.")
+    not_shipped_user = order.user.name if order.user else "Unknown User"
+    print(f"Order: {order.id} for {not_shipped_user} has not shipped yet.")
 
 # Count the total number of orders per user
 # Select the user's name and count their orders
@@ -156,12 +165,14 @@ for row in results:
     print(f"User: {row.name} | Total Orders: {row.total_orders}")
 
 # Delete a user by ID
-query = select(User).where(User.id == 1)
+target_user_id = 4
+query = select(User).where(User.id == target_user_id)
 user = session.execute(query).scalars().first()
 
 if user:
     session.delete(user)
     session.commit()
-    print(f'\nSuccessfully deleted user with ID {user.id} from the database.')
+    print(f'\nSuccessfully deleted user with ID {target_user_id} from the database.')
 else:
-    print("User not found.")
+    print(f"User {target_user_id} not found.")
+    
