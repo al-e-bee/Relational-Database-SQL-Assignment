@@ -1,7 +1,7 @@
 # ===========================================================
 # PART ONE: SET UP: Import necessary modules from SQLAlchemy
 # ===========================================================
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Boolean, select
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, mapped_column, Mapped
 from typing import List
@@ -25,6 +25,10 @@ class User(Base):
 
     # Relationship User -> Order
     user_orders: Mapped[List['Order']] = relationship(back_populates='user')
+    
+    # Clean printing of objects
+    def __repr__(self):
+        return f"<User(id={self.id}; name='{self.name}'; email='{self.email}')>"
 
 class Product(Base):
     __tablename__ = 'products'
@@ -35,6 +39,10 @@ class Product(Base):
     
     # Relationship Product -> Order
     product_in_orders: Mapped[List['Order']] = relationship(back_populates='product')
+    
+    # Clean printing of objects
+    def __repr__(self):
+        return f"<Product(id={self.id}; name='{self.name}', price=${self.price})>"
     
 class Order(Base):
     __tablename__ = 'orders'
@@ -80,3 +88,33 @@ session.add_all([user_ali, user_matt, shirt, shoes, tablet, headphones, order1, 
 
 session.commit()
 
+# ====================
+# PART FIVE: Queries
+# ====================
+
+# Retrieve all users and print their info
+all_users = session.execute(select(User)).scalars().all()
+print(all_users)
+
+# Retrieve all products and print their name and price
+all_products = session.execute(select(Product)).scalars().all()
+print(all_products)
+
+# Retrieve all orders, showing the user's name, product name, and quantity
+all_orders = session.execute(select(Order)).scalars().all()
+for order in all_orders:
+    print(f"User: {order.user.name} | Product: {order.product.name} | Qty: {order.quantity}")
+
+# Update a product's price
+query = select(Product).where(Product.id == 1)
+product = session.execute(query).scalars().first()
+product.price = 25
+
+session.commit()
+
+# Delete a user by ID
+query = select(User).where(User.id == 1)
+user = session.execute(query).scalars().first()
+
+session.delete(user)
+session.commit()
