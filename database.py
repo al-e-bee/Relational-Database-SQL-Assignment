@@ -1,7 +1,7 @@
 # ===========================================================
 # PART ONE: SET UP: Import necessary modules from SQLAlchemy
 # ===========================================================
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Boolean, select, func, desc
+from sqlalchemy import create_engine, Integer, String, ForeignKey, Boolean, select, func, desc
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, mapped_column, Mapped
 from typing import List
@@ -62,6 +62,9 @@ class Order(Base):
 # PART THREE: Create Tables
 # ===========================
 
+# Automatically drop old tables for database refresh each run
+Base.metadata.drop_all(engine)
+# Creates tables fresh with each run
 Base.metadata.create_all(engine)  
 
 # ========================
@@ -110,9 +113,13 @@ for order in all_orders:
 # Update a product's price
 query = select(Product).where(Product.id == 1)
 product = session.execute(query).scalars().first()
-product.price = 25
-
-session.commit()
+if product:
+    product.price = 25
+    session.commit()
+    print(f"\nProduct: {product.id} | Name: {product.name}'s price has successfully been changed.")
+else:
+    print("Product ID 1 not found for update.")
+    
 
 # =================
 # PART SIX: Bonus
@@ -124,9 +131,11 @@ session.commit()
 # Update shipping status for an order
 query = select(Order).where(Order.id == 3)
 order = session.execute(query).scalars().first()
-order.status = True
-
-session.commit()
+if order:
+    order.status = True
+    session.commit()
+else:
+    print(f"\nOrder ID 3 not found for update.")
 
 # Query all orders that are not shipped
 orders_not_shipped = session.execute(select(Order).where(Order.status == False)).scalars().all()
@@ -150,6 +159,9 @@ for row in results:
 query = select(User).where(User.id == 1)
 user = session.execute(query).scalars().first()
 
-session.delete(user)
-session.commit()
-print(f'\nSuccessfully deleted user with ID 1 from the database.')
+if user:
+    session.delete(user)
+    session.commit()
+    print(f'\nSuccessfully deleted user with ID {user.id} from the database.')
+else:
+    print("User not found.")
