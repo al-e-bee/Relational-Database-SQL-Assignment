@@ -1,7 +1,7 @@
 # ===========================================================
 # PART ONE: SET UP: Import necessary modules from SQLAlchemy
 # ===========================================================
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Boolean, select
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Boolean, select, func, desc
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, mapped_column, Mapped
 from typing import List
@@ -24,7 +24,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
 
     # Relationship User -> Order
-    user_orders: Mapped[List['Order']] = relationship(back_populates='user')
+    user_orders: Mapped[List['Order']] = relationship(back_populates='user', cascade='all, delete-orphan')
     
     # Clean printing of objects
     def __repr__(self):
@@ -51,7 +51,9 @@ class Order(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
     product_id: Mapped[int] = mapped_column(ForeignKey('products.id'))
     quantity: Mapped[int] = mapped_column(Integer)
-
+    # Add a 'status' column to the Order table (Boolean to represent shipped or not)
+    status: Mapped[bool] = mapped_column(Boolean, default=False)
+    
     # Relationship Orders -> User
     user: Mapped['User'] = relationship(back_populates='user_orders')
     product: Mapped['Product'] = relationship(back_populates='product_in_orders')
@@ -112,9 +114,42 @@ product.price = 25
 
 session.commit()
 
+# =================
+# PART SIX: Bonus
+# =================
+
+# Add a 'status' column to the Order table (Boolean to represent shipped or not)
+# ADDED IN ORDER TABLE CLASS #
+
+# Update shipping status for an order
+query = select(Order).where(Order.id == 3)
+order = session.execute(query).scalars().first()
+order.status = True
+
+session.commit()
+
+# Query all orders that are not shipped
+orders_not_shipped = session.execute(select(Order).where(Order.status == False)).scalars().all()
+for order in orders_not_shipped:
+    print(f"Order: {order.id} for {order.user.name} has not shipped yet.")
+
+# Count the total number of orders per user
+# Select the user's name and count their orders
+query = (
+    select(User.name, func.count(Order.id).label('total_orders'))
+    .join(Order) # Connect the Users to their orders
+    .group_by(User.id) # Group the results by each individual user
+    .order_by(desc('total_orders')) # Order by our count, highest to lowest
+)
+
+results = session.execute(query).all()
+for row in results:
+    print(f"User: {row.name} | Total Orders: {row.total_orders}")
+
 # Delete a user by ID
 query = select(User).where(User.id == 1)
 user = session.execute(query).scalars().first()
 
 session.delete(user)
 session.commit()
+print(f'\nSuccessfully deleted user with ID 1 from the database.')
